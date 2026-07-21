@@ -44,18 +44,18 @@ NOAA_INDICES = {
 def fetch_estaciones():
     """Obtiene la lista de estaciones desde la API del INA (Versión Estable)"""
     try:
-        url = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
-        res = requests.get(url, timeout=10)
-        res.raise_for_status()
+        url_estaciones = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
+        response = requests.get(url_estaciones)
+        response.raise_for_status() 
+        data_json = response.json()
         
-        # Procesamiento original que funcionaba
-        df = pd.DataFrame(res.json()['data'])[['sitecode', 'nombre']].dropna()
-        df['sitecode'] = df['sitecode'].astype(int)
-        
-        return df.sort_values(by='nombre')
+        df_estaciones = pd.DataFrame(data_json['data'])
+        df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
+        df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
+        df_estaciones = df_estaciones.sort_values(by='nombre')
     except Exception as e:
-        # Si falla por red, usa el fallback seguro
-        return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
+        print("Error al consumir la API de estaciones:", e)
+        df_estaciones = pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
     
     
 @st.cache_data(ttl=86400)
