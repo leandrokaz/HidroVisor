@@ -42,26 +42,22 @@ NOAA_INDICES = {
 
 @st.cache_data(ttl=3600)
 def fetch_estaciones():
-    """Obtiene la lista de estaciones desde la API del INA con Headers de navegador"""
-    url = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    """Obtiene la lista de estaciones desde la API del INA (Versión Estable)"""
     try:
-        res = requests.get(url, headers=headers, timeout=15)
+        url = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
+        res = requests.get(url, timeout=10)
         res.raise_for_status()
-        json_data = res.json()
         
-        if isinstance(json_data, dict) and 'data' in json_data:
-            df = pd.DataFrame(json_data['data'])
-            if 'sitecode' in df.columns and 'nombre' in df.columns:
-                df = df[['sitecode', 'nombre']].dropna()
-                df['sitecode'] = df['sitecode'].astype(int)
-                return df.sort_values(by='nombre')
-                
-        return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
+        # Procesamiento original que funcionaba
+        df = pd.DataFrame(res.json()['data'])[['sitecode', 'nombre']].dropna()
+        df['sitecode'] = df['sitecode'].astype(int)
+        
+        return df.sort_values(by='nombre')
     except Exception as e:
-        st.warning(f"Aviso API INA: {e}. Se usará la estación predeterminada.")
+        # Si falla por red, usa el fallback seguro
         return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
-
+    
+    
 @st.cache_data(ttl=86400)
 def download_and_parse_noaa_index(url):
     """Descarga y parsea el formato PSL de la NOAA"""
@@ -259,19 +255,17 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             secondary_y=True
         )
 
-    # Layout de la figura (Con grilla limpia en un solo eje)
+    # Layout de la figura (Sintaxis actualizada)
     fig.update_layout(
         title={
             'text': f'Análisis: <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
             'y': 0.95, 'x': 0.5, 'xanchor': 'center', 'font': {'size': 18}
         },
-        xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True, 'gridcolor': '#f0f0f0'},
+        xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True},
         yaxis={
             'title': f'Nivel {estacion_nombre} (m)', 
             'title_font': {'color': '#1d4ed8'}, 
-            'tickfont': {'color': '#1d4ed8'},
-            'showgrid': True,
-            'gridcolor': '#e5e7eb'
+            'tickfont': {'color': '#1d4ed8'}
         },
         yaxis2={
             'title': f"{index_meta['name']} ({index_meta['unit']})",
@@ -279,8 +273,7 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             'tickfont': {'color': '#dc2626'},
             'range': range_y_noaa, 
             'overlaying': 'y', 
-            'side': 'right',
-            'showgrid': False
+            'side': 'right'
         },
         plot_bgcolor='white', paper_bgcolor='white',
         legend={'orientation': 'h', 'yanchor': 'top', 'y': -0.15, 'xanchor': 'center', 'x': 0.5},
