@@ -257,16 +257,18 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
         )
 
     # Layout de la figura (Sintaxis actualizada)
-    fig.update_layout(
+fig.update_layout(
         title={
             'text': f'Análisis: <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
             'y': 0.95, 'x': 0.5, 'xanchor': 'center', 'font': {'size': 18}
         },
-        xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True},
+        xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True, 'gridcolor': '#f0f0f0'},
         yaxis={
             'title': f'Nivel {estacion_nombre} (m)', 
             'title_font': {'color': '#1d4ed8'}, 
-            'tickfont': {'color': '#1d4ed8'}
+            'tickfont': {'color': '#1d4ed8'},
+            'showgrid': True,          # <-- MANTIENE la cuadrícula para el nivel del río
+            'gridcolor': '#e5e7eb'
         },
         yaxis2={
             'title': f"{index_meta['name']} ({index_meta['unit']})",
@@ -274,7 +276,8 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             'tickfont': {'color': '#dc2626'},
             'range': range_y_noaa, 
             'overlaying': 'y', 
-            'side': 'right'
+            'side': 'right',
+            'showgrid': False          # <-- DESACTIVA la cuadrícula del eje secundario (NOAA)
         },
         plot_bgcolor='white', paper_bgcolor='white',
         legend={'orientation': 'h', 'yanchor': 'top', 'y': -0.15, 'xanchor': 'center', 'x': 0.5},
