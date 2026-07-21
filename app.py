@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jul 21 12:17:14 2026
-
-@author: leand
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Dashboard de Correlación Fluvial vs. Índices ENSO (NOAA)
 Desarrollado con Streamlit
 """
@@ -26,7 +19,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- DICCIONARIO DE ÍNDICES NOAA (SOLICITADO) ---
+# --- DICCIONARIO DE ÍNDICES NOAA ---
 NOAA_INDICES = {
     'NINO34': {
         'name': 'Multivariate ENSO Index (MEI V2)',
@@ -58,7 +51,6 @@ def fetch_estaciones():
         df['sitecode'] = df['sitecode'].astype(int)
         return df.sort_values(by='nombre')
     except Exception as e:
-        st.warning(f"Error cargando lista de estaciones vía API: {e}")
         return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
 
 @st.cache_data(ttl=86400)
@@ -94,10 +86,10 @@ def download_and_parse_noaa_index(url):
                     continue
                     
         df = pd.DataFrame(records)
-        df['fecha'] = pd.to_datetime(df.apply(lambda r: f"{int(r['year'])}-{int(r['month'])}-15", axis=1))
+        if not df.empty:
+            df['fecha'] = pd.to_datetime(df.apply(lambda r: f"{int(r['year'])}-{int(r['month'])}-15", axis=1))
         return df
     except Exception as ex:
-        st.error(f"Error parseando índice de la NOAA: {ex}")
         return pd.DataFrame()
 
 def fetch_river_data(f_inicio, f_fin, station_id):
@@ -106,15 +98,14 @@ def fetch_river_data(f_inicio, f_fin, station_id):
         conn = psycopg2.connect("dbname='meteorology' user='sololectura' host='correo.ina.gob.ar' port='9049'")
         sql_query = '''SELECT timestart as fecha, valor as nivel FROM alturas_all 
                        WHERE timestart BETWEEN %s AND %s AND unid=%s '''
-        df = pd.read_sql_query(sql_query, conn, params=[f_inicio, f_fin, station_id])
+        df = pd.read_sql_query(sql_query, conn, params=[f_inicio, f_fin, int(station_id)])
         conn.close()
         
         if not df.empty:
-            # Limpieza de códigos de error -9999
             df.loc[df['nivel'] <= -900, 'nivel'] = np.nan
         return df
     except Exception as e:
-        st.error(f"No se pudo conectar a la BBDD de hidrometría: {e}")
+        st.error(f"Error consultando BBDD de hidrometría: {e}")
         return pd.DataFrame()
 
 # --- 3. ENCABEZADO Y LOGO ---
@@ -128,14 +119,12 @@ with col_head2:
 
 st.markdown("---")
 
-# --- 4. PANEL DE CONTROLES (LAYOUT EN FILAS) ---
+# --- 4. PANEL DE CONTROLES ---
 df_estaciones = fetch_estaciones()
 
-# Fila 1 de Controles
 c1, c2, c3 = st.columns([2, 1, 2])
 
 with c1:
-    # Mapeo de nombre a sitecode
     estacion_nombre = st.selectbox(
         "Estación de Río (Eje Izquierdo - Azul):", 
         options=df_estaciones['nombre'].tolist(),
@@ -155,10 +144,8 @@ with c3:
         "Índice de El Niño (Eje Derecho - Rojo):",
         options=[info['name'] for info in NOAA_INDICES.values()]
     )
-    # Obtener la key del índice seleccionado
     selected_noaa_key = [k for k, v in NOAA_INDICES.items() if v['name'] == noaa_option_label][0]
 
-# Fila 2 de Controles: Rango Temporal
 time_range = st.radio(
     "Período de Visualización (Estándar e Históricos El Niño):",
     options=[
@@ -175,12 +162,16 @@ st.markdown("---")
 index_meta = NOAA_INDICES[selected_noaa_key]
 df_noaa_full = download_and_parse_noaa_index(index_meta['url'])
 
-if not df_noaa_full.empty:
-    # Cálculo de escala fija histórica para el eje Y de la NOAA
+if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
+    
     noaa_min_val = df_noaa_full['value'].min()
     noaa_max_val = df_noaa_full['value'].max()
-    span_noaa = noaa_max_val - noaa_min_val
-    range_y_noaa = [noaa_min_val - (span_noaa * 0.05), noaa_max_val + (span_noaa * 0.05)]
+    
+    if pd.isna(noaa_min_val) or pd.isna(noaa_max_val):
+        range_y_noaa = [-3.0, 3.0]
+    else:
+        span_noaa = noaa_max_val - noaa_min_val
+        range_y_noaa = [float(noaa_min_val - (span_noaa * 0.05)), float(noaa_max_val + (span_noaa * 0.05))]
 
     # Selección de rango de fechas
     today = date.today()
@@ -222,7 +213,6 @@ if not df_noaa_full.empty:
         df_rio = df_rio.set_index('fecha')
 
         if river_agg == "Media Mensual":
-            # Usamos 'M' para máxima compatibilidad entre versiones de pandas
             df_rio = df_rio.resample('M').mean().reset_index()
             mode_rio, marker_config = 'lines+markers', {'size': 5}
             name_suffix, hover_fmt = "(Media Mensual)", "%b-%Y"
@@ -260,18 +250,25 @@ if not df_noaa_full.empty:
             secondary_y=True
         )
 
-    # Layout de la figura
+    # Layout de la figura (Sintaxis actualizada)
     fig.update_layout(
         title={
             'text': f'Análisis: <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
             'y': 0.95, 'x': 0.5, 'xanchor': 'center', 'font': {'size': 18}
         },
         xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True},
-        yaxis={'title': f'Nivel {estacion_nombre} (m)', 'titlefont': {'color': '#1d4ed8'}, 'tickfont': {'color': '#1d4ed8'}},
+        yaxis={
+            'title': f'Nivel {estacion_nombre} (m)', 
+            'title_font': {'color': '#1d4ed8'}, 
+            'tickfont': {'color': '#1d4ed8'}
+        },
         yaxis2={
             'title': f"{index_meta['name']} ({index_meta['unit']})",
-            'titlefont': {'color': '#dc2626'}, 'tickfont': {'color': '#dc2626'},
-            'range': range_y_noaa, 'overlaying': 'y', 'side': 'right'
+            'title_font': {'color': '#dc2626'}, 
+            'tickfont': {'color': '#dc2626'},
+            'range': range_y_noaa, 
+            'overlaying': 'y', 
+            'side': 'right'
         },
         plot_bgcolor='white', paper_bgcolor='white',
         legend={'orientation': 'h', 'yanchor': 'top', 'y': -0.15, 'xanchor': 'center', 'x': 0.5},
@@ -279,8 +276,10 @@ if not df_noaa_full.empty:
         height=550
     )
 
-    # Renderizar en Streamlit
     st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.warning("No se pudieron cargar los datos del índice de la NOAA en este momento. Intente recargar la página.")
 
 # --- 6. PIE DE PÁGINA ---
 st.caption("Datos fluviales provistos por el **SIyAH - Instituto Nacional del Agua (INA)** | Índices climáticos provistos por la **NOAA Physical Sciences Laboratory (PSL)**")
