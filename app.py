@@ -141,7 +141,7 @@ with c1:
         options=df_estaciones['nombre'].tolist(),
         index=0
     )
-    station_id = df_estaciones[df_estaciones['nombre'] == estacion_nombre]['sitecode'].values[0]
+    station_id = int(df_estaciones[df_estaciones['nombre'] == estacion_nombre]['sitecode'].values[0])
 
 with c2:
     river_agg = st.radio(
