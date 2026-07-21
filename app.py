@@ -155,7 +155,7 @@ with c3:
 time_range = st.radio(
     "Período de Visualización (Estándar e Históricos El Niño):",
     options=[
-        "Últimos 2 Años", "Últimos 5 Años", 
+        "Últimos 2 Años", "Últimos 10 Años", 
         "Niño 1982-1983", "Niño 1991-1992", "Niño 1997-1998", "Niño 2015-2016", 
         "Serie Completa"
     ],
@@ -185,10 +185,10 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
         f_inicio = f"{today.year - 2}-{today.month:02d}-{today.day:02d}"
         f_fin = today.strftime("%Y-%m-%d")
         title_suffix = "Últimos 2 Años"
-    elif time_range == "Últimos 5 Años":
-        f_inicio = f"{today.year - 5}-{today.month:02d}-{today.day:02d}"
+    elif time_range == "Últimos 10 Años":
+        f_inicio = f"{today.year - 10}-{today.month:02d}-{today.day:02d}"
         f_fin = today.strftime("%Y-%m-%d")
-        title_suffix = "Últimos 5 Años"
+        title_suffix = "Últimos 10 Años"
     elif time_range == "Niño 1982-1983":
         f_inicio, f_fin = "1982-01-01", "1983-12-31"
         title_suffix = "Evento El Niño 1982-1983"
