@@ -51,11 +51,8 @@ def fetch_estaciones():
         
         df_estaciones = pd.DataFrame(data_json['data'])
         
-        # --- FILTRADO POR varId EN 2 Y 39 ---
-        if 'varId' in df_estaciones.columns:
-            df_estaciones = df_estaciones[df_estaciones['varId'].isin([2, 39])]
-        elif 'var_id' in df_estaciones.columns:
-            df_estaciones = df_estaciones[df_estaciones['var_id'].isin([2, 39])]
+        if 'tipo' in df_estaciones.columns:
+            df_estaciones = df_estaciones[df_estaciones['var'].isin(['H'])]
             
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
