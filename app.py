@@ -53,9 +53,10 @@ def fetch_estaciones():
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
         df_estaciones = df_estaciones.sort_values(by='nombre')
+        return df_estaciones.sort_values(by='nombre')
     except Exception as e:
         print("Error al consumir la API de estaciones:", e)
-        df_estaciones = pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
+        return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
     
     
 @st.cache_data(ttl=86400)
