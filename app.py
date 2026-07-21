@@ -42,17 +42,25 @@ NOAA_INDICES = {
 
 @st.cache_data(ttl=3600)
 def fetch_estaciones():
-    """Obtiene la lista de estaciones desde la API del INA (Versión Estable)"""
+    """Obtiene la lista de estaciones desde la API del INA filtrando varId (2 y 39)"""
     try:
         url_estaciones = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
-        response = requests.get(url_estaciones)
+        response = requests.get(url_estaciones, timeout=10)
         response.raise_for_status() 
         data_json = response.json()
         
         df_estaciones = pd.DataFrame(data_json['data'])
+        
+        # --- FILTRADO POR varId EN 2 Y 39 ---
+        if 'varId' in df_estaciones.columns:
+            df_estaciones = df_estaciones[df_estaciones['varId'].isin([2, 39])]
+        elif 'var_id' in df_estaciones.columns:
+            df_estaciones = df_estaciones[df_estaciones['var_id'].isin([2, 39])]
+            
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
-        df_estaciones = df_estaciones.sort_values(by='nombre')
+        df_estaciones = df_estaciones.drop_duplicates(subset=['sitecode'])
+        
         return df_estaciones.sort_values(by='nombre')
     except Exception as e:
         print("Error al consumir la API de estaciones:", e)
@@ -256,7 +264,7 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             secondary_y=True
         )
 
-    # Layout de la figura (Sintaxis actualizada)
+    # Layout de la figura
     fig.update_layout(
         title={
             'text': f'Análisis: <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
@@ -267,7 +275,7 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             'title': f'Nivel {estacion_nombre} (m)', 
             'title_font': {'color': '#1d4ed8'}, 
             'tickfont': {'color': '#1d4ed8'},
-            'showgrid': True,          # <-- MANTIENE la cuadrícula para el nivel del río
+            'showgrid': True,
             'gridcolor': '#e5e7eb'
         },
         yaxis2={
@@ -277,7 +285,8 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             'range': range_y_noaa, 
             'overlaying': 'y', 
             'side': 'right',
-            'showgrid': False          # <-- DESACTIVA la cuadrícula del eje secundario (NOAA)
+            'showgrid': False,     # <-- Elimina la grilla del eje secundario
+            'zeroline': False      # <-- ELIMINA LA LÍNEA DEL VALOR CERO EN EL EJE SECUNDARIO
         },
         plot_bgcolor='white', paper_bgcolor='white',
         legend={'orientation': 'h', 'yanchor': 'top', 'y': -0.15, 'xanchor': 'center', 'x': 0.5},
