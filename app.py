@@ -52,13 +52,14 @@ def fetch_estaciones():
         df_estaciones = pd.DataFrame(data_json['data'])
         
         if 'tipo' in df_estaciones.columns:
-            df_estaciones = df_estaciones[df_estaciones['var'].isin(['H'])]
+            df_estaciones = df_estaciones[df_estaciones['tipo'].isin(['H'] or ['A'])]
             
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
         df_estaciones = df_estaciones.drop_duplicates(subset=['sitecode'])
+        df_estaciones['nombre'] = df_estaciones['sitecode'].map(str) + ' - ' + df_estaciones['nombre']
         
-        return df_estaciones.sort_values(by='nombre')
+        return df_estaciones
     except Exception as e:
         print("Error al consumir la API de estaciones:", e)
         return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
