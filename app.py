@@ -264,6 +264,10 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
 
     # Layout de la figura
     fig.update_layout(
+        title={
+            'text': f'Análisis de Nivel Hidrométrico en <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
+            'y': 0.95, 'x': 0.5, 'xanchor': 'center', 'font': {'size': 18}
+        },
         xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True, 'gridcolor': '#f0f0f0'},
         yaxis={
             'title': f'Nivel en estación hidrométrica {estacion_nombre} (m)', 
