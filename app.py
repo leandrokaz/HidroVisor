@@ -57,7 +57,7 @@ def fetch_estaciones():
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
         df_estaciones = df_estaciones.drop_duplicates(subset=['sitecode'])
-        df_estaciones['nombre'] = df_estaciones['sitecode'].map(str) + ' - ' + df_estaciones['nombre']
+        #df_estaciones['nombre'] = df_estaciones['sitecode'].map(str) + ' - ' + df_estaciones['nombre']
         
         return df_estaciones
     except Exception as e:
@@ -264,13 +264,9 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
 
     # Layout de la figura
     fig.update_layout(
-        title={
-            'text': f'Análisis: <b>{estacion_nombre}</b> vs <b>{index_meta["name"]}</b> ({title_suffix})',
-            'y': 0.95, 'x': 0.5, 'xanchor': 'center', 'font': {'size': 18}
-        },
         xaxis={'title': 'Línea de Tiempo', 'type': 'date', 'showgrid': True, 'gridcolor': '#f0f0f0'},
         yaxis={
-            'title': f'Nivel {estacion_nombre} (m)', 
+            'title': f'Nivel en estación hidrométrica {estacion_nombre} (m)', 
             'title_font': {'color': '#1d4ed8'}, 
             'tickfont': {'color': '#1d4ed8'},
             'showgrid': True,
@@ -298,4 +294,4 @@ else:
     st.warning("No se pudieron cargar los datos del índice de la NOAA en este momento. Intente recargar la página.")
 
 # --- 6. PIE DE PÁGINA ---
-st.caption("Datos fluviales provistos por el **SIyAH - Instituto Nacional del Agua (INA)** | Índices climáticos provistos por la **NOAA Physical Sciences Laboratory (PSL)**")
+st.caption("Datos hidrológicos provistos por el **SIyAH - Instituto Nacional del Agua (INA)** | Índices climáticos provistos por la **NOAA Physical Sciences Laboratory (PSL)**")
