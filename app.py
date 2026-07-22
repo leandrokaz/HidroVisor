@@ -42,7 +42,7 @@ NOAA_INDICES = {
 
 @st.cache_data(ttl=3600)
 def fetch_estaciones():
-    """Obtiene la lista de estaciones desde la API del INA filtrando varId (2 y 39)"""
+    """Obtiene la lista de estaciones desde la API del INA"""
     try:
         url_estaciones = "https://alerta.ina.gob.ar/pub/datos/estaciones?auto=true&redId=10&format=json"
         response = requests.get(url_estaciones, timeout=10)
@@ -52,14 +52,13 @@ def fetch_estaciones():
         df_estaciones = pd.DataFrame(data_json['data'])
         
         if 'tipo' in df_estaciones.columns:
-            df_estaciones = df_estaciones[df_estaciones['tipo'].isin(['H'] or ['A'])]
+            df_estaciones = df_estaciones[df_estaciones['tipo'].isin(['H', 'A'])]
             
         df_estaciones = df_estaciones[['sitecode', 'nombre']].dropna()
         df_estaciones['sitecode'] = df_estaciones['sitecode'].astype(int)
         df_estaciones = df_estaciones.drop_duplicates(subset=['sitecode'])
-        #df_estaciones['nombre'] = df_estaciones['sitecode'].map(str) + ' - ' + df_estaciones['nombre']
         
-        return df_estaciones
+        return df_estaciones.sort_values(by='nombre')
     except Exception as e:
         print("Error al consumir la API de estaciones:", e)
         return pd.DataFrame([{'sitecode': 34, 'nombre': 'Pto. Pilcomayo (río Paraguay)'}])
@@ -105,16 +104,27 @@ def download_and_parse_noaa_index(url):
         return pd.DataFrame()
 
 def fetch_river_data(f_inicio, f_fin, station_id):
-    """Consulta la base de datos PostgreSQL local"""
+    """Consulta PostgreSQL y filtra datos fuera de rango extremo (Ultra rápido)"""
     try:
         conn = psycopg2.connect("dbname='meteorology' user='sololectura' host='correo.ina.gob.ar' port='9049'")
+        
+        # Filtro inicial en SQL para descartar errores burdos (-9999, etc.)
         sql_query = '''SELECT timestart as fecha, valor as nivel FROM alturas_all 
-                       WHERE timestart BETWEEN %s AND %s AND unid=%s '''
+                       WHERE timestart BETWEEN %s AND %s AND unid=%s 
+                       AND valor BETWEEN -15 AND 40'''
+                       
         df = pd.read_sql_query(sql_query, conn, params=[f_inicio, f_fin, int(station_id)])
         conn.close()
         
         if not df.empty:
-            df.loc[df['nivel'] <= -900, 'nivel'] = np.nan
+            # Filtro adicional dinámico por desvío de mediana (para picos esporádicos)
+            mediana = df['nivel'].median()
+            desvio = df['nivel'].std()
+            
+            if pd.notna(desvio) and desvio > 0:
+                # Marcamos como NaN cualquier valor que se aleje en exceso del comportamiento general
+                df.loc[np.abs(df['nivel'] - mediana) > (4 * desvio), 'nivel'] = np.nan
+
         return df
     except Exception as e:
         st.error(f"Error consultando BBDD de hidrometría: {e}")
@@ -283,8 +293,8 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
             'range': range_y_noaa, 
             'overlaying': 'y', 
             'side': 'right',
-            'showgrid': False,     # <-- Elimina la grilla del eje secundario
-            'zeroline': False      # <-- ELIMINA LA LÍNEA DEL VALOR CERO EN EL EJE SECUNDARIO
+            'showgrid': False,
+            'zeroline': False
         },
         plot_bgcolor='white', paper_bgcolor='white',
         legend={'orientation': 'h', 'yanchor': 'top', 'y': -0.15, 'xanchor': 'center', 'x': 0.5},
