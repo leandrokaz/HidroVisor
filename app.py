@@ -132,18 +132,14 @@ def fetch_river_data(f_inicio, f_fin, station_id):
         return pd.DataFrame()
 
 # --- 3. ENCABEZADO Y LOGO ---
-
-
-col_head1, col_head2, col_head3 = st.columns([3, 1, 1])
+col_head1, col_head2 = st.columns([3, 1])
 with col_head1:
     st.title("Seguimiento Hidrológico del Evento de El Niño")
     st.caption("Análisis comparativo temporal multianual entre hidrómetros locales y variables globales del Pacífico")
 
 with col_head2:
-    st.image("https://raw.githubusercontent.com/leandrokaz/HidroVisor/main/Log_SiyAH.png", use_container_width=True)
+    st.image("https://raw.githubusercontent.com/leandrokaz/HidroVisor/main/ina_version1.jpg", use_container_width=True)
 
-with col_head3:
-    st.image("https://raw.githubusercontent.com/leandrokaz/HidroVisor/main/Logo-LH.png", use_container_width=True)
 
 st.markdown("---")
 
