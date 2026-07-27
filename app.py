@@ -136,7 +136,7 @@ def fetch_river_data(f_inicio, f_fin, station_id):
 
 col_head1, col_head2, col_head3 = st.columns([3, 1, 1])
 with col_head1:
-    st.title("Seguimiento Hidrológico del Evento de El Niño"")
+    st.title("Seguimiento Hidrológico del Evento de El Niño")
     st.caption("Análisis comparativo temporal multianual entre hidrómetros locales y variables globales del Pacífico")
 
 with col_head2:
