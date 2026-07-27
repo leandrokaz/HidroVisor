@@ -104,7 +104,6 @@ def download_and_parse_noaa_index(url):
         return pd.DataFrame()
 
 def fetch_river_data(f_inicio, f_fin, station_id):
-    """Consulta PostgreSQL y limpia atípicos físicos en milisegundos"""
     try:
         conn = psycopg2.connect("dbname='meteorology' user='sololectura' host='correo.ina.gob.ar' port='9049'")
         
@@ -135,11 +134,12 @@ def fetch_river_data(f_inicio, f_fin, station_id):
 # --- 3. ENCABEZADO Y LOGO ---
 col_head1, col_head2 = st.columns([3, 1])
 with col_head1:
-    st.title("Correlación Río vs Índice de El Niño (NOAA)")
+    st.title("Seguimiento Hidrológico del Evento de El Niño")
     st.caption("Análisis comparativo temporal multianual entre hidrómetros locales y variables globales del Pacífico")
 
 with col_head2:
-    st.image("https://alerta.ina.gob.ar/img/Logo_SIyAH.png", width=220)
+    st.image("https://github.com/leandrokaz/HidroVisor/blob/main/Log_SiyAH.png", width=220)
+    st.image("https://github.com/leandrokaz/HidroVisor/blob/main/Logo-LH.png", width=220)
 
 st.markdown("---")
 
