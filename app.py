@@ -115,7 +115,7 @@ def fetch_river_data(f_inicio, f_fin, station_id):
             FROM alturas_all 
             WHERE timestart BETWEEN %s AND %s 
               AND unid = %s 
-              AND valor BETWEEN -15 AND 40
+              AND valor BETWEEN -50 AND 50
         '''
         df = pd.read_sql_query(sql_query, conn, params=[f_inicio, f_fin, int(station_id)])
         conn.close()
