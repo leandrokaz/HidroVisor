@@ -241,7 +241,7 @@ if not df_noaa_full.empty and df_noaa_full['value'].dropna().shape[0] > 0:
         df_rio = df_rio.set_index('fecha')
 
         if river_agg == "Media Mensual":
-            df_rio = df_rio.resample('M').mean().reset_index()
+            df_rio = df_rio.resample('ME').mean().reset_index()
             mode_rio, marker_config = 'lines+markers', {'size': 5}
             name_suffix, hover_fmt = "(Media Mensual)", "%b-%Y"
         else:
