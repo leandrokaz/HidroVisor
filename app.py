@@ -138,7 +138,7 @@ with col_head1:
     st.caption("Análisis comparativo temporal multianual entre hidrómetros locales y variables globales del Pacífico")
 
 with col_head2:
-    st.image("https://raw.githubusercontent.com/leandrokaz/HidroVisor/main/ina_version1.jpg", use_container_width=True)
+    st.image("https://raw.githubusercontent.com/leandrokaz/HidroVisor/main/ina_version1.jpg", width=220)
 
 
 st.markdown("---")
